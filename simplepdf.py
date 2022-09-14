@@ -18,8 +18,8 @@ def main():
         rotate()
 
 def help():
-    print('pdfpy [--merge] [in1.pdf ... inN.pdf] [out.pdf]')
-    print('pdfpy [--rotate] [in.pdf] [page1:-1(pageN),~page2,page7] [angle_degree (CW)] [out.pdf]')
+    print('simplepdf [--merge] [in1.pdf ... inN.pdf] [out.pdf]')
+    print('simplepdf [--rotate] [in.pdf] [page1:-1(pageN),~page2,page7] [angle_degree (CW)] [out.pdf]')
 
 def merge():
     if len(sys.argv) <= 3:
