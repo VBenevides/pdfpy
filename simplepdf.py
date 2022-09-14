@@ -83,5 +83,3 @@ def get_pages(page_string, num_pages):
 
 if __name__=='__main__':
     main()
-else:
-    print('included')
