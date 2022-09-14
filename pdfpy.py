@@ -7,7 +7,7 @@ from PyPDF2 import PdfFileMerger, PdfFileReader, PdfFileWriter
 OPERATIONS = ['--merge','--rotate']
 
 def main():
-    if sys.argv[1] not in OPERATIONS:
+    if len(sys.argv) < 2 or sys.argv[1] not in OPERATIONS:
         help()
         sys.exit(1)
 
