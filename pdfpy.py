@@ -1,6 +1,7 @@
 #!/bin/python
 
 import sys
+import os
 from PyPDF2 import PdfFileMerger, PdfFileReader, PdfFileWriter
 
 OPERATIONS = ['--merge','--rotate']
@@ -43,17 +44,26 @@ def rotate():
 
     pages = get_pages(sys.argv[3], pdf_reader.numPages)
 
-    for page_num in pages:
+    for page_num in range(pdf_reader.numPages):
         page = pdf_reader.getPage(page_num)
-        page.rotateClockwise(int(sys.argv[4]))
+        if page_num+1 in pages:
+            page.rotateClockwise(int(sys.argv[4]))
         pdf_writer.addPage(page)
 
+    same_file = False
+    if sys.argv[5] == sys.argv[2]:
+        same_file = True
 
-    pdf_in.close()
-    
-    pdf_out = open(sys.argv[5],'wb')
+    if same_file:
+        pdf_out = open('pdfpy_tmp'+sys.argv[5],'wb')
+    else:
+        pdf_out = open(sys.argv[5],'wb')
     pdf_writer.write(pdf_out)
     pdf_out.close()
+    pdf_in.close()
+
+    if same_file:
+        os.rename('pdfpy_tmp'+sys.argv[5], sys.argv[5])
 
 
 def get_pages(page_string, num_pages):
