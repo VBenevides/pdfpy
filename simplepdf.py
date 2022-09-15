@@ -2,7 +2,7 @@
 
 import sys
 import os
-from PyPDF2 import PdfFileMerger, PdfFileReader, PdfFileWriter
+from PyPDF2 import PdfFileMerger, PdfFileReader, PdfFileWriter, PdfReader, PdfWriter
 
 OPERATIONS = ['--merge','--rotate', '--extract']
 
@@ -44,58 +44,30 @@ def merge(pdfs):
     merge_file.write(pdfs[-1])
 
 def extract(input_pdf, output_pdf, page_string):
-    same_file = False
-    if input_pdf == output_pdf:
-        same_file = True
+    reader = PdfReader(input_pdf)
+    writer = PdfWriter()
 
-    pdf_in = open(input_pdf, 'rb')
-    pdf_reader = PdfFileReader(pdf_in)
-    pdf_writer = PdfFileWriter()
-
-    pages = get_pages(page_string, pdf_reader.numPages)
+    pages = get_pages(page_string, reader.numPages)
 
     for page_num in pages:
-        page = pdf_reader.getPage(page_num)
-        pdf_writer.addPage(page)
+        page = reader.getPage(page_num)
+        writer.addPage(page)
 
-    if same_file:
-        pdf_out = open('simplepdf_tmp'+output_pdf,'wb')
-    else:
-        pdf_out = open(output_pdf,'wb')
-    pdf_writer.write(pdf_out)
-    pdf_out.close()
-    pdf_in.close()
-
-    if same_file:
-        os.rename('simplepdf_tmp'+output_pdf, output_pdf)
+    writer.write(output_pdf)
 
 def rotate(input_pdf, output_pdf, page_string, angle):
-    same_file = False
-    if input_pdf == output_pdf:
-        same_file = True
-    
-    pdf_in = open(input_pdf, 'rb')
-    pdf_reader = PdfFileReader(pdf_in)
-    pdf_writer = PdfFileWriter()
+    reader = PdfReader(input_pdf)
+    writer = PdfWriter()
 
-    pages = get_pages(page_string, pdf_reader.numPages)
+    pages = get_pages(page_string, reader.numPages)
 
-    for page_num in range(pdf_reader.numPages):
-        page = pdf_reader.getPage(page_num)
+    for page_num in range(reader.numPages):
+        page = reader.getPage(page_num)
         if page_num in pages:
             page.rotateClockwise(angle)
-        pdf_writer.addPage(page)
+        writer.addPage(page)
 
-    if same_file:
-        pdf_out = open('simplepdf_tmp'+output_pdf,'wb')
-    else:
-        pdf_out = open(output_pdf,'wb')
-    pdf_writer.write(pdf_out)
-    pdf_out.close()
-    pdf_in.close()
-
-    if same_file:
-        os.rename('simplepdf_tmp'+output_pdf, output_pdf)
+    writer.write(output_pdf)
 
 
 def get_pages(page_string, num_pages):
