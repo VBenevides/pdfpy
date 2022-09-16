@@ -2,7 +2,7 @@
 
 import sys
 import os
-from PyPDF2 import PdfFileMerger, PdfFileReader, PdfFileWriter, PdfReader, PdfWriter
+from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 
 OPERATIONS = ['--merge','--rotate', '--extract']
 
@@ -38,9 +38,9 @@ def help():
     Example: 1:5,~3,7,-1 will include pages 1,2,4,5,7 and the last page')
 
 def merge(pdfs):
-    merge_file = PdfFileMerger()
-    for i in pdfs[0:-1]:
-        merge_file.append(PdfFileReader(i,'rb'))
+    merge_file = PdfMerger()
+    for pdf in pdfs[0:-1]:
+        merge_file.append(PdfReader(pdf))
     merge_file.write(pdfs[-1])
 
 def extract(input_pdf, output_pdf, page_string):
