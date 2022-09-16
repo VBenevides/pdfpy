@@ -4,7 +4,7 @@ import sys
 import os
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 
-OPERATIONS = ['--merge','--rotate', '--extract']
+OPERATIONS = ['--merge','--rotate', '--extract','--insert']
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in OPERATIONS:
@@ -26,6 +26,11 @@ def main():
             help()
             sys.exit(1)
         extract(sys.argv[2], sys.argv[-1], sys.argv[3])
+    elif sys.argv[1] == '--insert':
+        if len(sys.argv) != 6:
+            help()
+            sys.exit(1)
+        insert(sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5])
 
 def help():
     print('simplepdf [--merge] [in1.pdf ... inN.pdf] [out.pdf]')
@@ -84,6 +89,27 @@ def get_pages(page_string, num_pages):
             pages.add(int(part)-1)
 
     return pages
+
+def insert(input_pdf, new_pdf, pos, output_pdf):
+    reader = PdfReader(input_pdf)
+    reader2 = PdfReader(new_pdf)
+    writer = PdfWriter()
+
+    page_num = 0
+    while page_num < pos-1:
+        page = reader.getPage(page_num)
+        writer.addPage(page)
+        page_num += 1
+
+    for page in reader2.pages:
+        writer.addPage(page)
+
+    while page_num < reader.numPages:
+        page = reader.getPage(page_num)
+        writer.addPage(page)
+        page_num += 1
+
+    writer.write(output_pdf)
 
 if __name__=='__main__':
     main()
