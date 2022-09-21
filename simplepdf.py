@@ -37,7 +37,8 @@ def main():
 def help():
     print("simplepdf [--merge] [in1.pdf ... inN.pdf] [out.pdf]")
     print("simplepdf [--rotate] [in.pdf] [pages] [angle_degree (CW)] [out.pdf]")
-    print("simplepdf [--extract] [in.pdf] [pages] [out.pdf] \n")
+    print("simplepdf [--extract] [in.pdf] [pages] [out.pdf]")
+    print("simplepdf [--insert] [in.pdf] [add.pdf] [page] [out.pdf]\n")
     print(
         "Page selection: \n   1:N = from 1 to N (inclusive)\n\
     ~N = exclude page N\n\
