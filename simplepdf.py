@@ -4,34 +4,26 @@ import sys
 import os
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 
-OPERATIONS = ["--merge", "--rotate", "--extract", "--insert"]
-
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in OPERATIONS:
-        help()
-        sys.exit(1)
+    commands = {
+        "--merge": lambda opts: merge(parse_merge_args(opts)),
+        "--extract": lambda opts: extract(*parse_extract_args(opts)),
+        "--rotate": lambda opts: rotate(*parse_rotate_args(opts)),
+        "--insert": lambda opts: insert(*parse_insert_args(opts))
+    }
 
-    if sys.argv[1] == "--merge":
-        if len(sys.argv) <= 3:
-            help()
-            sys.exit(1)
-        merge(sys.argv[2:])
-    elif sys.argv[1] == "--rotate":
-        if len(sys.argv) != 6:
-            help()
-            sys.exit(1)
-        rotate(sys.argv[2], sys.argv[-1], sys.argv[3], int(sys.argv[4]))
-    elif sys.argv[1] == "--extract":
-        if len(sys.argv) != 5:
-            help()
-            sys.exit(1)
-        extract(sys.argv[2], sys.argv[-1], sys.argv[3])
-    elif sys.argv[1] == "--insert":
-        if len(sys.argv) != 6:
-            help()
-            sys.exit(1)
-        insert(sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5])
+    if len(sys.argv) < 2 or sys.argv[1] not in commands:
+        exit_showing_help()
+
+    command = sys.argv[1]
+    opts = sys.argv[2:]
+    commands[command](opts)
+
+
+def exit_showing_help():
+    help()
+    sys.exit(1)
 
 
 def help():
@@ -48,11 +40,27 @@ def help():
     )
 
 
+def parse_merge_args(opts):
+    if len(opts) <= 1:
+        exit_showing_help()
+    return opts
+
+
 def merge(pdfs):
     merge_file = PdfMerger()
     for pdf in pdfs[0:-1]:
         merge_file.append(PdfReader(pdf))
     merge_file.write(pdfs[-1])
+
+
+def parse_extract_args(opts):
+    if len(opts) != 3:
+        exit_showing_help()
+
+    input_pdf = opts[0]
+    output_pdf = opts[-1]
+    page_string = opts[1]
+    return [input_pdf, output_pdf, page_string]
 
 
 def extract(input_pdf, output_pdf, page_string):
@@ -66,6 +74,17 @@ def extract(input_pdf, output_pdf, page_string):
         writer.addPage(page)
 
     writer.write(output_pdf)
+
+
+def parse_rotate_args(opts):
+    if len(opts) != 4:
+        exit_showing_help()
+
+    input_pdf = opts[0]
+    output_pdf = opts[-1]
+    page_string = opts[1]
+    angle = int(opts[2])
+    return [input_pdf, output_pdf, page_string, angle]
 
 
 def rotate(input_pdf, output_pdf, page_string, angle):
@@ -99,6 +118,17 @@ def get_pages(page_string, num_pages):
             pages.add(int(part) - 1)
 
     return pages
+
+
+def parse_insert_args(opts):
+    if len(opts) != 4:
+        exit_showing_help()
+    
+    input_pdf = opts[0]
+    new_pdf = opts[1]
+    pos = int(opts[2])
+    output_pdf = opts[3]
+    return [input_pdf, new_pdf, pos, output_pdf]
 
 
 def insert(input_pdf, new_pdf, pos, output_pdf):
