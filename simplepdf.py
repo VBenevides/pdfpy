@@ -45,7 +45,11 @@ def main():
     parser_insert.set_defaults(func=insert)
 
     args = parser.parse_args()
-    args.func(args)
+
+    if args.subparser_name is None:
+        parser.print_help()
+    else:
+        args.func(args)
 
 
 def merge(args):
