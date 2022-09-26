@@ -2,104 +2,89 @@
 
 import sys
 import os
+import argparse
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 
+PAGE_STRING_HELP = """
+    page selection, separated by commas:
+        1:N = from 1 to N (inclusive);
+        ~N = exclude page N;
+        N = include page N;
+        -1 = last page;
+        Example: 1:5,~3,7,-1 will include pages 1,2,4,5,7 and the last page
+"""
 
 def main():
-    commands = {
-        "--merge": lambda opts: merge(parse_merge_args(opts)),
-        "--extract": lambda opts: extract(*parse_extract_args(opts)),
-        "--rotate": lambda opts: rotate(*parse_rotate_args(opts)),
-        "--insert": lambda opts: insert(*parse_insert_args(opts))
-    }
+    parser = argparse.ArgumentParser(description='Simple program for manipulating pdfs')
 
-    if len(sys.argv) < 2 or sys.argv[1] not in commands:
-        exit_showing_help()
+    subparsers = parser.add_subparsers(dest='subparser_name')
 
-    command = sys.argv[1]
-    opts = sys.argv[2:]
-    commands[command](opts)
+    parser_merge = subparsers.add_parser('merge', help='Merge pdfs into one')
+    parser_merge.add_argument('input_pdfs', nargs='*', help='List of pdf files to merge')
+    parser_merge.add_argument('output_pdf', help='Merged pdf file name')
+    parser_merge.set_defaults(func=merge)
 
+    parser_extract = subparsers.add_parser('extract', help='Extract pages from pdf')
+    parser_extract.add_argument('input_pdf', help='pdf to be extracted')
+    parser_extract.add_argument('page_string', help=PAGE_STRING_HELP)
+    parser_extract.add_argument('output_pdf', help='Extracted pdf file name')
+    parser_extract.set_defaults(func=extract)
 
-def exit_showing_help():
-    help()
-    sys.exit(1)
+    parser_rotate = subparsers.add_parser('rotate', help='Rotate given pages of a pdf with a given angle')
+    parser_rotate.add_argument('input_pdf', help='pdf to be rotated')
+    parser_rotate.add_argument('page_string', help=PAGE_STRING_HELP)
+    parser_rotate.add_argument('angle', type=int, help='Angle to rotate clockwise in degrees')
+    parser_rotate.add_argument('output_pdf', help='Rotated pdf file name')
+    parser_rotate.set_defaults(func=rotate)
 
+    parser_insert = subparsers.add_parser('insert', help='Insert a pdf inside another pdf at a given position')
+    parser_insert.add_argument('input_pdf', help='Base pdf file')
+    parser_insert.add_argument('inserted_pdf', help='pdf to be inserted into input_pdf')
+    parser_insert.add_argument('position', type=int, help='Page where the pdf should be inserted')
+    parser_insert.add_argument('output_pdf', help='Final pdf file name')
+    parser_insert.set_defaults(func=insert)
 
-def help():
-    print("simplepdf [--merge] [in1.pdf ... inN.pdf] [out.pdf]")
-    print("simplepdf [--rotate] [in.pdf] [pages] [angle_degree (CW)] [out.pdf]")
-    print("simplepdf [--extract] [in.pdf] [pages] [out.pdf]")
-    print("simplepdf [--insert] [in.pdf] [add.pdf] [page] [out.pdf]\n")
-    print(
-        "Page selection: \n   1:N = from 1 to N (inclusive)\n\
-    ~N = exclude page N\n\
-    N = include page N\n\
-    -1 = last page\n\
-    Example: 1:5,~3,7,-1 will include pages 1,2,4,5,7 and the last page"
-    )
+    args = parser.parse_args()
 
-
-def parse_merge_args(opts):
-    if len(opts) <= 1:
-        exit_showing_help()
-    return opts
+    if args.subparser_name is None:
+        parser.print_help()
+    else:
+        args.func(args)
 
 
-def merge(pdfs):
+def merge(args):
     merge_file = PdfMerger()
-    for pdf in pdfs[0:-1]:
+    for pdf in args.input_pdfs:
         merge_file.append(PdfReader(pdf))
-    merge_file.write(pdfs[-1])
+    merge_file.write(args.output_pdf)
 
 
-def parse_extract_args(opts):
-    if len(opts) != 3:
-        exit_showing_help()
-
-    input_pdf = opts[0]
-    output_pdf = opts[-1]
-    page_string = opts[1]
-    return [input_pdf, output_pdf, page_string]
-
-
-def extract(input_pdf, output_pdf, page_string):
-    reader = PdfReader(input_pdf)
+def extract(args):
+    reader = PdfReader(args.input_pdf)
     writer = PdfWriter()
 
-    pages = get_pages(page_string, reader.numPages)
+    pages = get_pages(args.page_string, reader.numPages)
 
     for page_num in pages:
         page = reader.getPage(page_num)
         writer.addPage(page)
 
-    writer.write(output_pdf)
+    writer.write(args.output_pdf)
 
 
-def parse_rotate_args(opts):
-    if len(opts) != 4:
-        exit_showing_help()
-
-    input_pdf = opts[0]
-    output_pdf = opts[-1]
-    page_string = opts[1]
-    angle = int(opts[2])
-    return [input_pdf, output_pdf, page_string, angle]
-
-
-def rotate(input_pdf, output_pdf, page_string, angle):
-    reader = PdfReader(input_pdf)
+def rotate(args):
+    reader = PdfReader(args.input_pdf)
     writer = PdfWriter()
 
-    pages = get_pages(page_string, reader.numPages)
+    pages = get_pages(args.page_string, reader.numPages)
 
     for page_num in range(reader.numPages):
         page = reader.getPage(page_num)
         if page_num in pages:
-            page.rotateClockwise(angle)
+            page.rotateClockwise(args.angle)
         writer.addPage(page)
 
-    writer.write(output_pdf)
+    writer.write(args.output_pdf)
 
 
 def get_pages(page_string, num_pages):
@@ -120,37 +105,26 @@ def get_pages(page_string, num_pages):
     return pages
 
 
-def parse_insert_args(opts):
-    if len(opts) != 4:
-        exit_showing_help()
-    
-    input_pdf = opts[0]
-    new_pdf = opts[1]
-    pos = int(opts[2])
-    output_pdf = opts[3]
-    return [input_pdf, new_pdf, pos, output_pdf]
-
-
-def insert(input_pdf, new_pdf, pos, output_pdf):
-    reader = PdfReader(input_pdf)
-    reader2 = PdfReader(new_pdf)
+def insert(args):
+    base_reader = PdfReader(args.input_pdf)
+    inserted_reader = PdfReader(args.inserted_pdf)
     writer = PdfWriter()
 
     page_num = 0
-    while page_num < pos - 1:
-        page = reader.getPage(page_num)
+    while page_num < args.position - 1:
+        page = base_reader.getPage(page_num)
         writer.addPage(page)
         page_num += 1
 
-    for page in reader2.pages:
+    for page in inserted_reader.pages:
         writer.addPage(page)
 
-    while page_num < reader.numPages:
-        page = reader.getPage(page_num)
+    while page_num < base_reader.numPages:
+        page = base_reader.getPage(page_num)
         writer.addPage(page)
         page_num += 1
 
-    writer.write(output_pdf)
+    writer.write(args.output_pdf)
 
 
 if __name__ == "__main__":
